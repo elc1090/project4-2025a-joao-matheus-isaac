@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Simulador de Combate</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .player-card { border: 1px solid #ccc; border-radius: 10px; padding: 15px; margin-bottom: 20px; }
+    .log-box { max-height: 300px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 8px; }
+  </style>
+</head>
+<body class="bg-light">
+    
+  <div class="container mt-4">
+    <h2 class="text-center mb-4">Simulador de Combate — Teste de Equilíbrio</h2>
+    <div class="row">
+      <div class="col-md-6">
+        <div class="player-card bg-white shadow-sm">
+          <h4>Jogador 1</h4>
+          <p>Vida: <span id="hp1">100</span></p>
+          <p>Especial: <span id="sp1">0</span></p>
+          <div class="mb-2">
+            <label>Tipo:</label>
+            <select id="type1" class="form-select">
+              <option value="leve">Leve (1 turno)</option>
+              <option value="medio">Médio (2 turnos)</option>
+              <option value="pesado">Pesado (3 turnos)</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label>Estilo:</label>
+            <select id="style1" class="form-select">
+              <option value="soco">Soco</option>
+              <option value="chute">Chute</option>
+              <option value="cabecada">Cabeçada</option>
+            </select>
+          </div>
+          <button id="attack1" class="btn btn-primary w-100 mb-2">Preparar Ataque</button>
+          <button id="special1" class="btn btn-warning w-100" disabled>Usar Especial</button>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="player-card bg-white shadow-sm">
+          <h4>Jogador 2</h4>
+          <p>Vida: <span id="hp2">100</span></p>
+          <p>Especial: <span id="sp2">0</span></p>
+          <div class="mb-2">
+            <label>Tipo:</label>
+            <select id="type2" class="form-select">
+              <option value="leve">Leve (1 turno)</option>
+              <option value="medio">Médio (2 turnos)</option>
+              <option value="pesado">Pesado (3 turnos)</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label>Estilo:</label>
+            <select id="style2" class="form-select">
+              <option value="soco">Soco</option>
+              <option value="chute">Chute</option>
+              <option value="cabecada">Cabeçada</option>
+            </select>
+          </div>
+          <button id="attack2" class="btn btn-primary w-100 mb-2">Preparar Ataque</button>
+          <button id="special2" class="btn btn-warning w-100" disabled>Usar Especial</button>
+        </div>
+      </div>
+    </div>
+    <div class="log-box mt-4 mb-3" id="log"></div>
+    <button class="btn btn-success w-100" id="nextTurn">Próximo Turno</button>
+  </div>
+
+<script>
+
+const log = (msg) => {
+    const logBox = document.getElementById('log');
+    logBox.innerHTML += `<div>${msg}</div>`;
+    logBox.scrollTop = logBox.scrollHeight;
+};
+
+let hp1 = 100, hp2 = 100;
+let sp1 = 0, sp2 = 0;
+let queue1 = [], queue2 = [];
+
+const styleWins = {
+    soco: 'cabecada',
+    cabecada: 'chute',
+    chute: 'soco'
+};
+
+const delayByType = { pesado: 3, medio: 2, leve: 1, anulado: 0 };
+const damageByType = { pesado: 45, medio: 15, leve: 5, anulado: 0 };
+
+const rankByType = { pesado: 3, medio: 2, leve: 1, anulado: 0 };
+const typeByRank = { 3: 'pesado', 2: 'medio', 1: 'leve', 0: 'anulado' };
+
+const prepareAttack = (player, type, style) => {
+    const delay = delayByType[type];
+    const queue = player === 1 ? queue1 : queue2;
+    queue.push({
+        type,
+        style,
+        delay,
+        turnsLeft: delay,
+        rank: rankByType[type]
+    });
+    log(`Jogador ${player} prepara ${type} (${style}) que será executado em ${delay} turno(s).`);
+};
+
+const useSpecial = (player) => {
+    const queue = player === 1 ? queue1 : queue2;
+    queue.push({ type: 'especial', style: 'especial', delay: 1, turnsLeft: 1, rank: 99 }); // Rank alto para não ser afetado
+    if (player === 1) sp1 = 0; else sp2 = 0;
+    log(`Jogador ${player} prepara <strong>ESPECIAL!</strong>`);
+    updateUI();
+};
+
+const aplicarCounterEmFila = (counterAttack, attackInQueue) => {
+    if (attackInQueue.type === 'especial' || attackInQueue.rank === 0) return;
+
+    const ranksToReduce = rankByType[counterAttack.type] || 0;
+    if (ranksToReduce === 0) return;
+
+    const originalRank = attackInQueue.rank;
+    const newRank = Math.max(0, originalRank - ranksToReduce);
+
+    if (newRank < originalRank) {
+        const originalType = typeByRank[originalRank];
+        const newType = typeByRank[newRank];
+        
+        attackInQueue.rank = newRank;
+        attackInQueue.type = newType;
+
+        if (newRank === 0) {
+            log(`COUNTER PREVENTIVO: O ataque ${originalType} foi <strong>ANULADO</strong>!`);
+            attackInQueue.turnsLeft = 0;
+        } else {
+            log(`COUNTER PREVENTIVO: O ataque ${originalType} foi rebaixado para ${newType}!`);
+        }
+        return true;
+    }
+    return false;
+};
+
+const getReducedDamage = (counterAttack, victimAttack) => {
+    const ranksToReduce = rankByType[counterAttack.type] || 0;
+    const victimRank = rankByType[victimAttack.type] || 0;
+    
+    const newRank = Math.max(0, victimRank - ranksToReduce);
+    const newType = typeByRank[newRank];
+
+    log(`O ataque ${victimAttack.type} foi counterado por ${counterAttack.type}! Dano reduzido.`);
+    return damageByType[newType];
+};
+
+const resolveTurn = () => {
+    log(`--- <strong>Início do Turno</strong> ---`);
+
+    queue1.forEach(a => a.turnsLeft--);
+    queue2.forEach(a => a.turnsLeft--);
+
+    const exec1 = queue1.find(a => a.turnsLeft === 0);
+    const exec2 = queue2.find(a => a.turnsLeft === 0);
+
+    if (exec1) {
+        queue2.forEach(attackInQueue => {
+            if (styleWins[exec1.style] === attackInQueue.style) {
+                if (aplicarCounterEmFila(exec1, attackInQueue)) {
+                   sp1 = Math.min(sp1 + 20, 100);
+                }
+            }
+        });
+    }
+    if (exec2) {
+        queue1.forEach(attackInQueue => {
+            if (styleWins[exec2.style] === attackInQueue.style) {
+                if (aplicarCounterEmFila(exec2, attackInQueue)) {
+                    sp2 = Math.min(sp2 + 20, 100);
+                }
+            }
+        });
+    }
+
+    let dmgTo1 = 0;
+    let dmgTo2 = 0;
+    
+    const isSpecial1 = exec1 && exec1.type === 'especial';
+    const isSpecial2 = exec2 && exec2.type === 'especial';
+
+    const p1_counters_p2 = exec1 && exec2 && !isSpecial1 && !isSpecial2 && styleWins[exec1.style] === exec2.style;
+    const p2_counters_p1 = exec1 && exec2 && !isSpecial1 && !isSpecial2 && styleWins[exec2.style] === exec1.style;
+
+    if (exec1) {
+        if (isSpecial1) {
+            dmgTo2 = 50;
+            log(`Jogador 1 usa <strong>ESPECIAL</strong> e causa ${dmgTo2} de dano!`);
+        } else {
+            const currentDamage = damageByType[exec1.type];
+            if (currentDamage === 0) {
+                 log(`O ataque do Jogador 1 foi anulado antes da execução!`);
+            } else if (p2_counters_p1) {
+                dmgTo2 = getReducedDamage(exec2, exec1);
+                sp2 = Math.min(sp2 + 20, 100);
+            } else {
+                dmgTo2 = currentDamage;
+                log(`Jogador 1 ataca com ${exec1.type} (${exec1.style}) causando ${dmgTo2} de dano!`);
+            }
+        }
+    }
+
+    if (exec2) {
+        if (isSpecial2) {
+            dmgTo1 = 50;
+            log(`Jogador 2 usa <strong>ESPECIAL</strong> e causa ${dmgTo1} de dano!`);
+        } else {
+            const currentDamage = damageByType[exec2.type];
+             if (currentDamage === 0) {
+                 log(`O ataque do Jogador 2 foi anulado antes da execução!`);
+            } else if (p1_counters_p2) {
+                dmgTo1 = getReducedDamage(exec1, exec2);
+                sp1 = Math.min(sp1 + 20, 100);
+            } else {
+                dmgTo1 = currentDamage;
+                log(`Jogador 2 ataca com ${exec2.type} (${exec2.style}) causando ${dmgTo1} de dano!`);
+            }
+        }
+    }
+
+    hp1 = Math.max(hp1 - dmgTo1, 0);
+    hp2 = Math.max(hp2 - dmgTo2, 0);
+
+    queue1 = queue1.filter(a => a.turnsLeft > 0);
+    queue2 = queue2.filter(a => a.turnsLeft > 0);
+
+    updateUI();
+    log(`--- <strong>Fim do Turno</strong> ---`);
+
+    if (hp1 <= 0 || hp2 <= 0) {
+        document.getElementById('nextTurn').disabled = true;
+        document.getElementById('attack1').disabled = true;
+        document.getElementById('attack2').disabled = true;
+        if (hp1 <= 0 && hp2 <= 0) {
+            log(`<strong>Empate!</strong> Ambos os jogadores foram derrotados!`);
+        } else {
+            log(`<strong>Fim de jogo! ${hp1 <= 0 ? 'Jogador 2 venceu!' : 'Jogador 1 venceu!'}</strong>`);
+        }
+    }
+};
+
+const updateUI = () => {
+    document.getElementById('hp1').textContent = hp1;
+    document.getElementById('hp2').textContent = hp2;
+    document.getElementById('sp1').textContent = `${sp1}%`;
+    document.getElementById('sp2').textContent = `${sp2}%`;
+    document.getElementById('special1').disabled = sp1 < 100;
+    document.getElementById('special2').disabled = sp2 < 100;
+};
+
+document.getElementById('attack1').onclick = () => {
+    prepareAttack(1, document.getElementById('type1').value, document.getElementById('style1').value);
+};
+document.getElementById('attack2').onclick = () => {
+    prepareAttack(2, document.getElementById('type2').value, document.getElementById('style2').value);
+};
+document.getElementById('special1').onclick = () => {
+    useSpecial(1);
+};
+document.getElementById('special2').onclick = () => {
+    useSpecial(2);
+};
+document.getElementById('nextTurn').onclick = () => {
+    resolveTurn();
+};
+
+updateUI();
+</script>
+</body>
+</html>
