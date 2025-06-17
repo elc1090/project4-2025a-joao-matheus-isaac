@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Gerador de Imagens</title>
+</head>
+<body>
+  <h1>Gerar Imagem pela Descrição</h1>
+
+  <form method="post">
+    {% csrf_token %}
+    <input type="text" name="descricao" placeholder="Descreva a imagem..." required>
+    <button type="submit">Gerar</button>
+  </form>
+
+  {% if imagem_base64 %}
+    <h2>Imagem Gerada:</h2>
+    <img src="data:image/png;base64,{{ imagem_base64 }}" alt="Imagem gerada" style="max-width: 500px;">
+  {% endif %}
+</body>
+</html>
