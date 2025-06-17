@@ -16,6 +16,8 @@ urlpatterns = [
     path('remover_golpe/<int:id_golpe>/', remover_golpe_view, name='remover_golpe'),
     path('login/', login_view, name='login'),
     path('logout/', logout_view, name='logout'),
+    #path("teste-multiplayer/<str:room_name>/", teste_multiplayer, name="teste_multiplayer"),
+    path("teste-multiplayer/", teste_multiplayer, name="teste_multiplayer"),
     #path('criar_lutador/', criar_lutador_view, name='criar_lutador'),
     path('exemplo/', exemplo_view, name='exemplo'),  
 ]

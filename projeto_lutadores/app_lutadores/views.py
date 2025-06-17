@@ -187,5 +187,9 @@ def logout_view(request):
     request.session.flush()
     return redirect('login')
 
+
+def teste_multiplayer(request):
+    return render(request, "teste_multiplayer.html", {"room_name": "sala1"})
+
 def exemplo_view(request):
     return HttpResponse("Essa é a view de exemplo") # retorna uma resposta em html

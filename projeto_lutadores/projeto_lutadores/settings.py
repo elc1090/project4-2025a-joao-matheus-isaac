@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -38,7 +39,30 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'app_lutadores',
+    "channels",
 ]
+
+# entrypoint ASGI
+ASGI_APPLICATION = "projeto_lutadores.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [
+                "rediss://default:AazKAAIncDFhZDQ3OTA1ZjA3ODU0ZjQ5OTBkOGU2OTI4NzZjNjE3NHAxNDQyMzQ@vital-ladybird-44234.upstash.io:6379"
+            ],
+        },
+    },
+}
+
+"""
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
+"""
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
