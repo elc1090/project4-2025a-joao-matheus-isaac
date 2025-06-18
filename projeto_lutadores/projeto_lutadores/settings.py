@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -32,6 +34,13 @@ CSRF_TRUSTED_ORIGINS = [
     'https://yucky-noreen-sou-aluno-2ab614ec.koyeb.app',
     # incluir outros domínios se houver
 ]
+
+load_dotenv(dotenv_path=BASE_DIR / '.env')
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
+GOOGLE_REDIRECT_URI = 'http://127.0.0.1:8000/oauth2/callback/google/'  # para ambiente local
+# Para produção, substitua pela URL do Koyeb:
+# GOOGLE_REDIRECT_URI = 'https://yucky-noreen-sou-aluno-2ab614ec.koyeb.app/oauth2/callback/google/'
 
 
 # Application definition

@@ -4,6 +4,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from urllib.parse import urlencode
+from django.conf import settings
+import requests
 from .models import *
 
 
@@ -203,6 +206,70 @@ def registro_view(request):
             return redirect('home')
 
     return render(request, 'registro.html')
+
+def google_oauth_callback_view(request):
+    code = request.GET.get('code')
+    if not code:
+        messages.error(request, 'Código de autorização não fornecido.')
+        return redirect('login')
+
+    # Trocar código pelo token
+    token_url = 'https://oauth2.googleapis.com/token'
+    data = {
+        'code': code,
+        'client_id': settings.GOOGLE_CLIENT_ID,
+        'client_secret': settings.GOOGLE_CLIENT_SECRET,
+        'redirect_uri': settings.GOOGLE_REDIRECT_URI,
+        'grant_type': 'authorization_code',
+    }
+    token_response = requests.post(token_url, data=data)
+    if token_response.status_code != 200:
+        messages.error(request, 'Falha ao obter token do Google.')
+        return redirect('login')
+
+    token_json = token_response.json()
+    access_token = token_json.get('access_token')
+    if not access_token:
+        messages.error(request, 'Token de acesso inválido.')
+        return redirect('login')
+
+    # Buscar dados do usuário no Google
+    userinfo_url = 'https://www.googleapis.com/oauth2/v1/userinfo'
+    params = {'access_token': access_token}
+    userinfo_response = requests.get(userinfo_url, params=params)
+    if userinfo_response.status_code != 200:
+        messages.error(request, 'Falha ao obter dados do usuário Google.')
+        return redirect('login')
+
+    userinfo = userinfo_response.json()
+    email = userinfo.get('email')
+    nome = userinfo.get('name') or userinfo.get('email')
+
+    if not email:
+        messages.error(request, 'E-mail do usuário não disponível.')
+        return redirect('login')
+
+    # Verifica se usuário existe; cria se não existir
+    usuario, created = Usuario.objects.get_or_create(email=email, defaults={'nome': nome, 'senha': ''})
+
+    # Salva dados na sessão
+    request.session['usuario_id'] = usuario.id
+    request.session['usuario_nome'] = usuario.nome
+
+    return redirect('home')
+
+def google_oauth_login_view(request):
+    base_url = "https://accounts.google.com/o/oauth2/v2/auth"
+    params = {
+        "client_id": settings.GOOGLE_CLIENT_ID,
+        "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "access_type": "offline",
+        "prompt": "consent",
+    }
+    url = f"{base_url}?{urlencode(params)}"
+    return redirect(url)
 
 
 

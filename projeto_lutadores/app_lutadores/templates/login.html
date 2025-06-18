@@ -14,11 +14,12 @@
 
   .login-form {
     background-color: rgba(255, 255, 255, 0.1);
-    padding: 2rem;
+    padding: 3rem;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    width: 300px;
+    width: 700px; /* era 400px */
   }
+
 
   .login-form label {
     display: block;
@@ -47,17 +48,22 @@
       <input type="password" name="senha" required />
     </label>
 
-  <div class="conteudo2-botoes">
-    <button type="submit" class="conteudo2-botao">Entrar</button>
-    <button type="button" id="btn-registro" class="conteudo2-botao">Registro</button>
-  </div>
+<div class="conteudo2-botoes">
+  <button type="submit" class="conteudo2-botao">Entrar</button>
+  <button type="button" id="btn-registro" class="conteudo2-botao">Registro</button>
+  <button type="button" id="btn-google" class="conteudo2-botao">Entrar com Google</button>
+</div>
 
-
-  <script>
+<script>
     document.getElementById('btn-registro').addEventListener('click', function() {
       window.location.href = "{% url 'registro' %}";
     });
-  </script>
+
+    document.getElementById('btn-google').addEventListener('click', function() {
+      window.location.href = "{% url 'oauth2_login' %}";
+    });
+</script>
+
 
   </form>
 </div>

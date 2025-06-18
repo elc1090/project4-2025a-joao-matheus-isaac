@@ -6,7 +6,9 @@ from django.conf import settings
 EXEMPT_URLS = [
     reverse('login'),
     reverse('logout'),
-    reverse('registro'),  # adicione aqui
+    reverse('registro'),
+    reverse('oauth2_login'),
+    reverse('google_oauth_callback'),
 ]
 
 # Prefixos de caminhos públicos (estáticos e mídia)
