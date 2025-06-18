@@ -178,6 +178,7 @@ def login_view(request):
         try:
             usuario = Usuario.objects.get(nome=nome, senha=senha)
             request.session['usuario_id'] = usuario.id
+            request.session['usuario_nome'] = usuario.nome  # salva o nome na sessão
             return redirect('home')
         except Usuario.DoesNotExist:
             messages.error(request, 'Usuário ou senha inválidos')
@@ -189,7 +190,10 @@ def logout_view(request):
 
 
 def teste_multiplayer(request):
-    return render(request, "teste_multiplayer.html", {"room_name": "sala1"})
+    usuario_id = request.session.get('usuario_id')
+    if not usuario_id:
+        return redirect('login')
+    return render(request, "teste_multiplayer.html", {"usuario_id": usuario_id})
 
 def exemplo_view(request):
     return HttpResponse("Essa é a view de exemplo") # retorna uma resposta em html
