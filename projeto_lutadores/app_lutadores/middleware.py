@@ -3,7 +3,11 @@ from django.urls import reverse
 from django.conf import settings
 
 # URLs públicas que não exigem autenticação
-EXEMPT_URLS = [reverse('login'), reverse('logout')]
+EXEMPT_URLS = [
+    reverse('login'),
+    reverse('logout'),
+    reverse('registro'),  # adicione aqui
+]
 
 # Prefixos de caminhos públicos (estáticos e mídia)
 EXEMPT_PATH_PREFIXES = ['/static/', '/media/']

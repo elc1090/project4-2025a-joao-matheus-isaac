@@ -1,15 +1,18 @@
 from django.db import models
 
+
 class Usuario(models.Model):
     """
     É o usuário que faz o login no banco de dados.
     Campos:
       - id: auto incremento, primary key
       - nome: nome do usuário
+      - email: email do usuário
       - senha: senha do usuário
     """
     id = models.AutoField(primary_key=True)
     nome = models.CharField(max_length=255)
+    email = models.EmailField(max_length=255, unique=True)
     senha = models.CharField(max_length=255)
 
     class Meta:

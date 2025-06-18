@@ -188,6 +188,23 @@ def logout_view(request):
     request.session.flush()
     return redirect('login')
 
+def registro_view(request):
+    if request.method == 'POST':
+        nome = request.POST.get('nome')
+        email = request.POST.get('email')
+        senha = request.POST.get('senha')
+
+        if Usuario.objects.filter(nome=nome).exists():
+            messages.error(request, 'Nome de usuário já existe')
+        else:
+            usuario = Usuario.objects.create(nome=nome, email=email, senha=senha)
+            request.session['usuario_id'] = usuario.id
+            request.session['usuario_nome'] = usuario.nome
+            return redirect('home')
+
+    return render(request, 'registro.html')
+
+
 
 def teste_multiplayer(request):
     usuario_id = request.session.get('usuario_id')
