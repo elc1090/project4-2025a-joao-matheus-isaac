@@ -24,9 +24,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-p1xr_bk3e@-hs7pits%x0$jesj%qcnhn5hqei)2gppd)j^%ejd'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://yucky-noreen-sou-aluno-2ab614ec.koyeb.app',
+    # incluir outros domínios se houver
+]
 
 
 # Application definition
