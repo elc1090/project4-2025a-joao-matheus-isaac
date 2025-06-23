@@ -7,6 +7,10 @@ from django.contrib import messages
 from urllib.parse import urlencode
 from django.conf import settings
 import requests
+import os
+from dotenv import load_dotenv
+from supabase import create_client
+from urllib.parse import urlparse
 from .models import *
 
 
@@ -18,14 +22,52 @@ def home_view(request):
     contexto = {'lutadores': lutadores}
     return render(request, 'home.html', contexto)
 
+def deletar_imagem_bucket(url_imagem):
+    SUPABASE_URL = "https://ilermoovzaxjeenkfmts.supabase.co"
+    SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    
+    parsed_url = urlparse(url_imagem)
+    caminho = parsed_url.path  # ex: /storage/v1/object/public/imagens.ia//lutador.png
+    
+    prefixo = "/storage/v1/object/public/imagens.ia/"
+    if caminho.startswith(prefixo):
+        nome_arquivo = caminho[len(prefixo):]
+    else:
+        nome_arquivo = caminho.lstrip("/")
+    
+    if nome_arquivo != "lutador.png":  # não remove a imagem padrão
+        supabase.storage.from_("imagens.ia").remove([nome_arquivo])
+
 @require_POST
 def remover_lutador(request, id_lutador):
-    """
-    Remove o lutador de acordo com o ID enviado pelo form.
-    """
     lutador = get_object_or_404(Lutador, pk=id_lutador)
+    
+    if lutador.url_imagem:
+        try:
+            deletar_imagem_bucket(lutador.url_imagem)
+        except Exception as e:
+            print(f"Erro ao deletar imagem do bucket: {e}")
+    
     lutador.delete()
     return redirect('home')
+
+
+from .gera import gerar_imagem_flux
+from pathlib import Path
+
+load_dotenv()
+def upload_imagem_bucket(caminho_local, nome_arquivo):
+    SUPABASE_URL = "https://ilermoovzaxjeenkfmts.supabase.co"
+    SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    with open(caminho_local, "rb") as f:
+        supabase.storage.from_("imagens.ia").upload(
+            path=nome_arquivo,
+            file=f,
+            file_options={"content-type": "image/png", "upsert": "true"}
+        )
+    return f"{SUPABASE_URL}/storage/v1/object/public/imagens.ia/{nome_arquivo}"
 
 def criar_lutador_view(request):
     usuario_id = request.session.get('usuario_id')
@@ -36,7 +78,6 @@ def criar_lutador_view(request):
     usuario = Usuario.objects.get(pk=usuario_id)
 
     if request.method == 'POST':
-        # Verifica limite somente após POST
         if Lutador.objects.filter(usuario=usuario).count() >= 2:
             messages.error(request, "Você já atingiu o limite de 2 lutadores.")
             return render(request, 'criar_lutador.html', {
@@ -47,6 +88,7 @@ def criar_lutador_view(request):
         idade = request.POST.get('idade') or None
         profissao = request.POST.get('profissao') or ''
         historia = request.POST.get('historia') or ''
+        aparencia = request.POST.get('aparencia') or ''
 
         novo = Lutador.objects.create(
             nome=nome,
@@ -64,15 +106,46 @@ def criar_lutador_view(request):
             if inimigo_id:
                 Inimizade.objects.create(lutador=novo, inimigo_id=int(inimigo_id))
 
+        pasta_saida = Path(__file__).resolve().parent / "lutadores"
+        pasta_saida.mkdir(exist_ok=True)
+        nome_arquivo = f"{nome}.png"
+        caminho_completo = str(pasta_saida / nome_arquivo)
+
+        imagem_gerada = False
+
+        if aparencia:
+            try:
+                gerar_imagem_flux(aparencia, output_path=caminho_completo)
+                imagem_gerada = True
+                print(f"Imagem gerada: {nome_arquivo}")
+            except Exception as e:
+                messages.warning(request, f"Erro ao gerar imagem: {e}")
+
+        if not imagem_gerada:
+            caminho_completo = str(pasta_saida / "lutador.png")
+            nome_arquivo = "lutador.png"
+            print("Imagem padrão utilizada: lutador.png")
+
+        try:
+            url_imagem = upload_imagem_bucket(caminho_completo, nome_arquivo)
+            novo.url_imagem = url_imagem
+        except Exception as e:
+            messages.warning(request, f"Erro ao enviar imagem para o bucket: {e}")
+
+        novo.save()
         return redirect('home')
 
     return render(request, 'criar_lutador.html', {
         'lutadores': lutadores
     })
 
+
+from django.shortcuts import render, get_object_or_404
+from .models import Lutador
+
 def ver_lutador_view(request, id_lutador):
     lutador = get_object_or_404(Lutador, id_lutador=id_lutador)
-    lutadores = Lutador.objects.exclude(id_lutador=lutador.id_lutador)  # todos menos o atual
+    lutadores = Lutador.objects.exclude(id_lutador=lutador.id_lutador)
 
     amizades_ids = list(lutador.amizades.values_list('amigo_id', flat=True))
     inimizades_ids = list(lutador.inimizades.values_list('inimigo_id', flat=True))
@@ -82,7 +155,9 @@ def ver_lutador_view(request, id_lutador):
         'lutadores': lutadores,
         'amizades_ids': amizades_ids,
         'inimizades_ids': inimizades_ids,
+        'url_imagem': lutador.url_imagem  # adiciona a URL da imagem do bucket
     })
+
 
 
 

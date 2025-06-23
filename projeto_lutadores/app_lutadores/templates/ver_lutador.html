@@ -3,86 +3,104 @@
 
 {% block title %}Editando Lutador{% endblock %}
 
-
 {% block content %}
 <header class="cabecalho2">
-    <div class="conteudo-principal">
+  <div class="conteudo-principal">
     <h1 class="conteudo-principal-escrito-titulo">{{ lutador.nome }}</h1>
+  </div>
 </header>
 
 <main class="conteudo2">
-<form method="post" action="{% url 'editar_lutador' lutador.id_lutador %}">
-  {% csrf_token %}
-  
-  <label>Nome:
-    <input type="text" name="nome" value="{{ lutador.nome }}" required/>
-  </label>
-  
-  <label>Idade:
-    <input type="number" name="idade" value="{{ lutador.idade }}" min="-2147483648" max="2147483647" required/>
-  </label>
-  
-  <label>Profissão:
-    <input type="text" name="profissao" value="{{ lutador.profissao }}" />
-  </label>
 
 <style>
-    .checkbox-container {
+  .imagem-lutador-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .imagem-lutador-container img {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+  }
+
+  .checkbox-container {
     background-color: white;
     border: 1px solid #ccc;
-    border-radius: 4px;          /* igual aos inputs */
-    padding: 0.5rem;             /* igual aos inputs */
-    max-height: 150px;           /* permite scroll vertical */
+    border-radius: 4px;
+    padding: 0.5rem;
+    max-height: 150px;
     overflow-y: auto;
-    width: 100%;                 /* ocupa a largura do pai, igual inputs */
+    width: 100%;
     color: black;
-    font-size: 1rem;             /* igual ao input */
-    box-sizing: border-box;      /* para respeitar padding e largura */
-    }
+    font-size: 1rem;
+    box-sizing: border-box;
+  }
 
-    .checkbox-container label {
+  .checkbox-container label {
     display: block;
     padding: 0.25rem 0;
     cursor: pointer;
     color: black;
-    font-weight: normal;         /* para não ficar muito forte */
-    }
+    font-weight: normal;
+  }
 </style>
 
-
-<label>Amizades:</label>
-<div class="checkbox-container">
-  {% if lutadores|length == 0 %}
-    <p>Não há lutadores cadastrados.</p>
-  {% else %}
-    {% for l in lutadores %}
-      {% if l != lutador %}
-        <label>
-          <input type="checkbox" name="amizades" value="{{ l.id_lutador }}"
-            {% if l.id_lutador in amizades_ids %}checked{% endif %}>
-          {{ l.nome }}
-        </label>
-      {% endif %}
-    {% endfor %}
-  {% endif %}
+<div class="imagem-lutador-container">
+  <img src="{{ url_imagem }}" alt="Imagem do lutador">
 </div>
 
-<label>Inimizades:</label>
-<div class="checkbox-container">
-  {% if lutadores|length == 0 %}
-    <p>Não há lutadores cadastrados.</p>
-  {% else %}
-    {% for l in lutadores %}
-      {% if l != lutador %}
-        <label>
-          <input type="checkbox" name="inimizades" value="{{ l.id_lutador }}"
-            {% if l.id_lutador in inimizades_ids %}checked{% endif %}>
-          {{ l.nome }}
-        </label>
-      {% endif %}
-    {% endfor %}
-  {% endif %}
-</div>
+<form method="post" action="{% url 'editar_lutador' lutador.id_lutador %}">
+  {% csrf_token %}
+
+  <label>Nome:
+    <input type="text" name="nome" value="{{ lutador.nome }}" required/>
+  </label>
+
+  <label>Idade:
+    <input type="number" name="idade" value="{{ lutador.idade }}" min="-2147483648" max="2147483647" required/>
+  </label>
+
+  <label>Profissão:
+    <input type="text" name="profissao" value="{{ lutador.profissao }}" />
+  </label>
+
+  <label>Amizades:</label>
+  <div class="checkbox-container">
+    {% if lutadores|length == 0 %}
+      <p>Não há lutadores cadastrados.</p>
+    {% else %}
+      {% for l in lutadores %}
+        {% if l != lutador %}
+          <label>
+            <input type="checkbox" name="amizades" value="{{ l.id_lutador }}"
+              {% if l.id_lutador in amizades_ids %}checked{% endif %}>
+            {{ l.nome }}
+          </label>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <label>Inimizades:</label>
+  <div class="checkbox-container">
+    {% if lutadores|length == 0 %}
+      <p>Não há lutadores cadastrados.</p>
+    {% else %}
+      {% for l in lutadores %}
+        {% if l != lutador %}
+          <label>
+            <input type="checkbox" name="inimizades" value="{{ l.id_lutador }}"
+              {% if l.id_lutador in inimizades_ids %}checked{% endif %}>
+            {{ l.nome }}
+          </label>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  </div>
 
   <label>História:
     <textarea name="historia">{{ lutador.historia }}</textarea>

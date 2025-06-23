@@ -32,10 +32,11 @@ class Lutador(models.Model):
       - profissao: profissão do lutador
       - historia: texto com a história do lutador
       - usuario: FK para Usuario (quem criou)
+      - url_imagem: URL da imagem do lutador no bucket
     """
     id_lutador = models.AutoField(primary_key=True)
     nome = models.CharField(max_length=255)
-    idade = models.IntegerField(default=18)  # ou null=True, blank=True
+    idade = models.IntegerField(default=18)
     profissao = models.CharField(max_length=255, default='Desconhecida')
     historia = models.TextField(default='Sem história cadastrada.')
     usuario = models.ForeignKey(
@@ -44,12 +45,15 @@ class Lutador(models.Model):
         db_column='usuario_id',
         related_name='lutadores'
     )
+    url_imagem = models.URLField(null=True, blank=True)
 
     class Meta:
         db_table = 'lutador'
 
     def __str__(self):
         return self.nome
+
+
 
 
 class Golpe(models.Model):
