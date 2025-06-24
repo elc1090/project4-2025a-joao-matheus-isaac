@@ -29,7 +29,7 @@ def gerar_imagem_flux(descricao: str, output_path: str = None):
         output_path = proximo_nome_arquivo()
     prompt = f"Lutador, {descricao}"
     payload = {"inputs": prompt}
-    resp = requests.post(API_URL, headers=HEADERS, json=payload, timeout=300)
+    resp = requests.post(API_URL, headers=HEADERS, json=payload)
     resp.raise_for_status()
     with open(output_path, "wb") as f:
         f.write(resp.content)
